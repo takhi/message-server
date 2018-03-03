@@ -1,0 +1,14 @@
+{
+  "name": "message-server",
+  "version": "1.0.0",
+  "description": "Websocket Message Server",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Minh Huynh",
+  "license": "MIT",
+  "dependencies": {
+    "nodejs-websocket": "^1.7.1"
+  }
+}
