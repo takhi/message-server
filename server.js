@@ -6,6 +6,7 @@ const CLIENT = {get_messages: 'GET', add_message: 'POST', join: 'JOIN', ping: 'P
 
 let connectionMap = new Map();
 let messageBoard = [];
+let messageKey = 0;
 
 function broadcast(message) {
     connectionMap.forEach((connection) => {
@@ -26,6 +27,7 @@ const server = websocket.createServer((connection) => {
                 case CLIENT.add_message:
                     let message = client.message;
                     if (!connectionMap.has(message.user)) break;
+                    message.key = messageKey++;
                     messageBoard.push(message);
                     broadcast(message);
                     break;
