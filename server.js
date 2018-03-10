@@ -2,16 +2,28 @@ const websocket = require('nodejs-websocket');
 
 const PORT = 1001;
 const SERVER = {messages: 'ALL', new_message: 'NEW', success: 'OK', fail: 'FAIL', pong: 'PONG'};
+SERVER.USER = {joined: 'JOINED', left: 'LEFT'};
 const CLIENT = {get_messages: 'GET', add_message: 'POST', join: 'JOIN', ping: 'PING'};
 
 let connectionMap = new Map();
 let messageBoard = [];
 let messageKey = 0;
 
-function broadcast(message) {
+function broadcastMessage(message) {
     connectionMap.forEach((connection) => {
         connection.sendText(JSON.stringify({response: SERVER.new_message, message: message}));
     });
+}
+
+function broadcastData(responseCode, data) {
+    connectionMap.forEach((connection) => {
+        connection.sendText(JSON.stringify({response: responseCode, data: data}));
+    });
+}
+
+function getUsers() {
+    let userList = Array.from(connectionMap.keys());
+    return userList.map(user => {return {name: user}});
 }
 
 const server = websocket.createServer((connection) => {
@@ -29,7 +41,7 @@ const server = websocket.createServer((connection) => {
                     if (!connectionMap.has(message.user)) break;
                     message.key = messageKey++;
                     messageBoard.push(message);
-                    broadcast(message);
+                    broadcastMessage(message);
                     break;
                 case CLIENT.join:
                     let newUser = client.user;
@@ -40,6 +52,7 @@ const server = websocket.createServer((connection) => {
                         user = newUser;
                         connectionMap.set(user, connection);
                         connection.sendText(JSON.stringify({response: SERVER.success, request: CLIENT.join}));
+                        broadcastData(SERVER.USER.joined, {user: newUser, users: getUsers()});
                     }
                     break;
                 case CLIENT.ping:
@@ -52,7 +65,10 @@ const server = websocket.createServer((connection) => {
         }
     })
     connection.on('close', () => {
-        if (user) connectionMap.delete(user);
+        if (user) {
+            connectionMap.delete(user);
+            broadcastData(SERVER.USER.left, {user: user, users: getUsers()});
+        }
     });
     connection.on('error', (error) => console.log(`CONERROR: ${error.message}`));
 }).listen(PORT);
