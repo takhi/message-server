@@ -2,8 +2,8 @@ const websocket = require('nodejs-websocket');
 
 const PORT = 1001;
 const SERVER = {messages: 'ALL', new_message: 'NEW', success: 'OK', fail: 'FAIL', pong: 'PONG'};
-SERVER.USER = {joined: 'JOINED', left: 'LEFT'};
-const CLIENT = {get_messages: 'GET', add_message: 'POST', join: 'JOIN', ping: 'PING'};
+SERVER.USER = {joined: 'JOINED', left: 'LEFT', typing: 'TYPE', not_typing: 'NTYPE'};
+const CLIENT = {get_messages: 'GET', add_message: 'POST', join: 'JOIN', ping: 'PING', typing: 'TYPE', not_typing: 'NTYPE'};
 
 let connectionMap = new Map();
 let messageBoard = [];
@@ -23,7 +23,7 @@ function broadcastData(responseCode, data) {
 
 function getUsers() {
     let userList = Array.from(connectionMap.keys());
-    return userList.map(user => {return {name: user}});
+    return userList.map((user) => ({name: user}));
 }
 
 const server = websocket.createServer((connection) => {
@@ -58,6 +58,12 @@ const server = websocket.createServer((connection) => {
                 case CLIENT.ping:
                     console.log('ponging');
                     connection.sendText(JSON.stringify({response: SERVER.success, pong: SERVER.pong}))
+                    break;
+                case CLIENT.typing:
+                    broadcastData(SERVER.USER.typing, user);
+                    break;
+                case CLIENT.not_typing:
+                    broadcastData(SERVER.USER.not_typing, user);
                     break;
             }
         } catch (error) {
